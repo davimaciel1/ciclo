@@ -1,50 +1,60 @@
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
+st.title("📊 Ciclo Fundamentalista da Empresa (WEGE3)")
+st.markdown("Visualize os quadrantes econômicos com base em Receita e EBITDA YoY, junto com o preço do ativo.")
 
-st.title("🌎 Análise de Ciclos Fundamentalistas")
-st.markdown("Visualize a evolução dos trimestres em quadrantes com base na Receita e EBITDA (YoY).")
-
-# Dados de exemplo para WEGE3 (substituir depois com dados dinâmicos ou API)
-data = {
-    'Trimestre': ['1T21', '2T21', '3T21', '4T21', '1T22', '2T22', '3T22', '4T22', '1T23', '2T23'],
-    'Receita YoY (%)': [25, 28, 24, 22, 20, 18, 15, 10, 12, 14],
-    'EBITDA YoY (%)': [30, 35, 32, 28, 25, 20, 10, 5, 8, 10]
-}
-
-df = pd.DataFrame(data)
-df['Receita YoY'] = df['Receita YoY (%)'] / 100
-df['EBITDA YoY'] = df['EBITDA YoY (%)'] / 100
+# Leitura do CSV com dados reais
+df = pd.read_csv("dados_fundamentalistas_wege3.csv")
+df['Receita YoY (%)'] = df['Receita YoY'] * 100
+df['EBITDA YoY (%)'] = df['EBITDA YoY'] * 100
 
 # Gráfico
 fig, ax = plt.subplots(figsize=(10, 6))
-
-# Linhas dos quadrantes
 ax.axhline(0, color='black', linewidth=1)
 ax.axvline(0, color='black', linewidth=1)
 
-# Fundo colorido dos quadrantes
-ax.set_facecolor('white')
+# Fundo dos quadrantes
 ax.fill_between([-0.5, 0], 0, 0.5, facecolor='lightblue', alpha=0.3)   # Recuperação
 ax.fill_between([0, 0.5], 0, 0.5, facecolor='lightgreen', alpha=0.3)  # Expansão
 ax.fill_between([0, 0.5], -0.5, 0, facecolor='khaki', alpha=0.3)      # Retração
 ax.fill_between([-0.5, 0], -0.5, 0, facecolor='lightcoral', alpha=0.3) # Desaceleração
 
-# Plotagem do ciclo
+# Rótulos dos quadrantes
+ax.text(-0.45, 0.42, "Recuperação", fontsize=10, weight='bold')
+ax.text(0.25, 0.42, "Expansão", fontsize=10, weight='bold')
+ax.text(-0.45, -0.42, "Desaceleração", fontsize=10, weight='bold')
+ax.text(0.25, -0.42, "Retração", fontsize=10, weight='bold')
+
+# Plotagem
 ax.plot(df['Receita YoY'], df['EBITDA YoY'], marker='o', color='blue', linewidth=2)
 
-# Rótulos
+# Trimestres + preço
 for i, row in df.iterrows():
-    ax.text(row['Receita YoY'], row['EBITDA YoY'], row['Trimestre'], fontsize=9, ha='left')
+    label = f"{row['Trimestre']}\nR$ {row['Preço Ajustado']:.2f}"
+    ax.text(row['Receita YoY'], row['EBITDA YoY'], label, fontsize=8, ha='left')
 
 ax.set_xlabel('Receita YoY (%)')
 ax.set_ylabel('EBITDA YoY (%)')
-ax.set_title('Ciclo Fundamentalista da Empresa (WEGE3)')
 ax.grid(True)
 plt.xlim(-0.5, 0.5)
 plt.ylim(-0.5, 0.5)
 
 st.pyplot(fig)
+
+# Correlação
+st.subheader("🔍 Correlação entre fundamentos e preço")
+with open("correlacao_wege3.txt", "r") as file:
+    correl_info = file.read()
+st.code(correl_info)
+
+# Alerta inteligente
+st.subheader("🚨 Alerta Inteligente")
+ultimo = df.iloc[-1]
+anterior = df.iloc[-2]
+if (ultimo['EBITDA YoY'] > anterior['EBITDA YoY']) and (ultimo['Preço Ajustado'] <= anterior['Preço Ajustado']):
+    st.warning("EBITDA YoY está acelerando, mas o preço ainda não subiu. Isso pode indicar uma oportunidade!")
+else:
+    st.success("Sem anomalias detectadas entre EBITDA e preço no último trimestre.")
