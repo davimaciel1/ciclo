@@ -1,0 +1,3 @@
+Correlação YoY entre fundamentos e preço:
+- Receita x Preço: 0.94
+- EBITDA x Preço: 0.95
